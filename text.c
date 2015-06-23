@@ -853,6 +853,49 @@ void text_debug(Text *txt) {
 	}
 }
 
+static void history_subtree_dump(Text *txt, Action *a, FILE *file) {
+	/* Create and style current node */
+	fprintf(file, "\taction_%p [shape=box, ", a);
+	if (txt->history == a)
+		fputs("color=darkgreen", file);
+	else
+		fputs("color=black", file);
+	fputs("]\n", file);
+
+	/* draw all "earlier" arrows */
+	Action *later = a->later;
+	if (later)
+		fprintf(file, "\taction_%p -> action_%p [constraint=false, color=\"blue\", dir=\"both\"]\n", later, a);
+
+	/* Draw relationships between current node and its children */
+	Action *child = a->next;
+	if (!child)
+		return;
+	/* draw arrow to "next" if at fork */
+	fprintf(file, "\taction_%p -> action_%p [constraint=false, color=\"red\"]\n", a, child);
+	while (child->alt_prev)
+		child = child->alt_prev;
+	for ( ; child; child = child->alt_next ) {
+		/* draw all prev arrows */
+		fprintf(file, "\taction_%p -> action_%p\n", child, a);
+		history_subtree_dump(txt, child, file);
+	}
+}
+
+bool text_history_dump(Text *txt, const char *filename) {
+	FILE *file = fopen(filename, "w");
+	if (!file)
+		return false;
+	Action *root = txt->history;
+	while (root->prev)
+		root = root->prev;
+	fputs("digraph {\n\tnode[fontname=\"Courier\"]\n\n", file);
+	history_subtree_dump(txt, root, file);
+	fputs("}\n", file);
+	fclose(file);
+	return true;
+}
+
 /* A delete operation can either start/stop midway through a piece or at
  * a boundry. In the former case a new piece is created to represent the
  * remaining text before/after the modification point.
