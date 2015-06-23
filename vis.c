@@ -419,6 +419,8 @@ static bool cmd_write(Filerange*, enum CmdOpt, const char *argv[]);
 static bool cmd_saveas(Filerange*, enum CmdOpt, const char *argv[]);
 /* filter range through external program argv[1] */
 static bool cmd_filter(Filerange*, enum CmdOpt, const char *argv[]);
+/* dump the current state of the undo tree to file argv[1] */
+static bool cmd_histdump(Filerange*, enum CmdOpt, const char *argv[]);
 /* switch to the previous saved state of the text, chronologically */
 static bool cmd_earlier(Filerange*, enum CmdOpt, const char *argv[]);
 /* switch to the next saved state of the text, chronologically */
@@ -1877,6 +1879,12 @@ static bool cmd_filter(Filerange *range, enum CmdOpt opt, const char *argv[]) {
 	reset_prog_mode();
 	wclear(stdscr);
 	return status == 0;
+}
+
+static bool cmd_histdump(Filerange *range, enum CmdOpt opt, const char *argv[]) {
+	if (!argv[1])
+		return false;
+	return text_history_dump(vis->win->file->text, argv[1]);
 }
 
 static bool cmd_earlier(Filerange *range, enum CmdOpt opt, const char *argv[]) {
